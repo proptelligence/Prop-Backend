@@ -78,6 +78,7 @@ app.post("/login", async (req, res) => {
   );
 });
 
+
 app.get("/users", (req, res) => {
   db.all("SELECT * FROM users", [], (err, rows) => {
     if (err) {
@@ -89,8 +90,12 @@ app.get("/users", (req, res) => {
   });
 });
 
+
+
+
+
 // Start the server
-const PORT = 3002;
+const PORT = 3005;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
