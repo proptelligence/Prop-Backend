@@ -36,7 +36,7 @@ app.post('/api/post-property', async (req, res) => {
 
   const mailOptions = {
     from: process.env.EMAIL,
-    to: 'recipient-email@example.com', // Change to your recipient email
+    to: 'proptechdevelopment@gmail.com', // Change to your recipient email
     subject: 'New Property Submission',
     html: `
       <h1>Property Details</h1>
