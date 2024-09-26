@@ -25,6 +25,13 @@ const storage = multer.diskStorage({
   },
 });
 
+const uploadDir = path.join(__dirname, 'uploads');
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+
 const upload = multer({ storage });
 
 // Endpoint to handle property posting with image uploads
