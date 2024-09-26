@@ -1,101 +1,65 @@
-const express = require("express");
-const cors = require("cors");
+import express from 'express';
+import nodemailer from 'nodemailer';
+import bodyParser from 'body-parser';
+import dotenv from 'dotenv';
+import cors from 'cors';
+
+dotenv.config();
+
 const app = express();
-const sqlite3 = require("sqlite3").verbose();
-const bcrypt = require("bcrypt");
+const PORT = process.env.PORT || 5000;
 
-app.use(express.json());
-app.use(cors()); // Enable CORS for all routes
+app.use(cors());
+app.use(bodyParser.json());
 
-// Connect to the SQLite database
-const db = new sqlite3.Database("users.db");
+app.post('/api/post-property', async (req, res) => {
+  const {
+    title,
+    description,
+    price,
+    location,
+    poster,
+    buildingType,
+    bedrooms,
+    bathrooms,
+    images,
+  } = req.body;
 
-// Create a users table if it doesn't exist
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT,
-      mobile TEXT,
-      email TEXT UNIQUE,
-      password TEXT
-    )
-  `);
-});
-
-// Endpoint to handle user registration
-app.post("/register", async (req, res) => {
-  const { name, mobile, email, password } = req.body;
-
-  // Hash the password
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  // Insert user data into the database
-  db.run(
-    "INSERT INTO users (name, mobile, email, password) VALUES (?, ?, ?, ?)",
-    [name, mobile, email, hashedPassword],
-    (err) => {
-      if (err) {
-        console.error("Error registering user:", err);
-        res.status(500).json({ error: "Failed to register user" });
-        return;
-      }
-      res.status(200).json({ message: "User registered successfully" });
-    }
-  );
-});
-
-// Endpoint to handle user login
-app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
-
-  // Retrieve user from the database based on the email
-  db.get(
-    "SELECT * FROM users WHERE email = ?",
-    [username],
-    async (err, row) => {
-      if (err) {
-        console.error("Error finding user:", err);
-        res.status(500).json({ error: "Error finding user" });
-        return;
-      }
-
-      if (!row) {
-        res.status(401).json({ error: "Invalid credentials" });
-        return;
-      }
-
-      // Compare passwords
-      const match = await bcrypt.compare(password, row.password);
-
-      if (!match) {
-        res.status(401).json({ error: "Invalid credentials" });
-        return;
-      }
-
-      res.status(200).json({ message: "Login successful" });
-    }
-  );
-});
-
-
-app.get("/users", (req, res) => {
-  db.all("SELECT * FROM users", [], (err, rows) => {
-    if (err) {
-      console.error("Error getting user data:", err);
-      res.status(500).json({ error: "Error getting user data" });
-      return;
-    }
-    res.status(200).json({ users: rows });
+  // Create a transporter using your email service
+  const transporter = nodemailer.createTransport({
+    service: 'gmail', // or any other email service
+    auth: {
+      user: process.env.EMAIL,
+      pass: process.env.EMAIL_PASS,
+    },
   });
+
+  const mailOptions = {
+    from: process.env.EMAIL,
+    to: 'recipient-email@example.com', // Change to your recipient email
+    subject: 'New Property Submission',
+    html: `
+      <h1>Property Details</h1>
+      <p><strong>Title:</strong> ${title}</p>
+      <p><strong>Description:</strong> ${description}</p>
+      <p><strong>Price:</strong> ₹${price}</p>
+      <p><strong>Location:</strong> ${location}</p>
+      <p><strong>Posted By:</strong> ${poster}</p>
+      <p><strong>Building Type:</strong> ${buildingType}</p>
+      <p><strong>Bedrooms:</strong> ${bedrooms}</p>
+      <p><strong>Bathrooms:</strong> ${bathrooms}</p>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ message: 'Property details sent successfully!' });
+  } catch (error) {
+    console.error('Error sending email:', error);
+    res.status(500).json({ error: 'Failed to send email' });
+  }
 });
 
-
-
-
-
-// Start the server
-const PORT = 3005;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
